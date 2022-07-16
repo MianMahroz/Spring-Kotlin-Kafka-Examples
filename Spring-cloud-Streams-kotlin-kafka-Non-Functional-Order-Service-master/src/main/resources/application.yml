@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: scs-100
+
+  cloud.stream:
+    bindings:
+      ## defining consumers and destinations (that from which topic they can consume data)
+      inventoryChecking-in:  #consumer
+        destination: inventoryChecking-out    # data topic
+        group: ${spring.application.name}-inventoryChecking-group
+        consumer:
+          maxAttempts: 1
+
+      order-dlq:  # Error consumer
+        destination: scs-100.ordering_dlq   # error data topic
+
+      shipping-in: #consumer
+        destination: shipping-out   # shipping data topic
+        group: ${spring.application.name}-shipping-group
+
+    kafka:
+      bindings:  ## defining consumer error topics
+        # If Inventory Checking fails
+        inventoryChecking-in.consumer:
+          enableDlq: true
+          dlqName: scs-100.ordering_dlq  # payload would be dumped to error topic in case of any error during this consumer
+          autoCommitOnError: true
+          AutoCommitOffset: true
+
+        # If shipping fails
+        shipping-in.consumer:
+          enableDlq: true
+          dlqName: scs-100.ordering_dlq # payload would be dumped to error topic in case of any error during this consumer
+          autoCommitOnError: true
+          AutoCommitOffset: true
